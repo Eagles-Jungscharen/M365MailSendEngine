@@ -6,9 +6,13 @@ param location string= resourceGroup().location
 
 @description('applicationSecret')
 @secure()
-param secretValue string
+param secretApplicationValue string
 
-var keyVaultName = 'MailSendKV'
+@description('qrCodeSecret')
+@secure()
+param secretQrCodeValue string
+
+var keyVaultName = 'MSKV${uniqueString(resourceGroup().id)}'
 var tenantId = subscription().tenantId
 
 resource kv 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
@@ -40,12 +44,20 @@ resource kv 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-resource secret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource secretApplication 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: kv
   name: 'applicationSecret'
   properties: {
-    value: secretValue
+    value: secretApplicationValue
+  }
+}
+resource secretQRCode 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: kv
+  name: 'qrCodeSecret'
+  properties: {
+    value: secretQrCodeValue
   }
 }
 
-output secretUri string = secret.properties.secretUri
+output secretApplicationUri string = secretApplication.properties.secretUri
+output secretQrCodeUri string = secretQRCode.properties.secretUri

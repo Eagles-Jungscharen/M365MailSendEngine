@@ -14,14 +14,22 @@ param applicationSecret string
 @description('siteId')
 param siteId string
 
-@description('siteId')
+@description('definitionListId')
 param definitionListId string
 
-@description('siteId')
+@description('incomingMailListId')
 param incomingMailListId string
 
 @description('azureObjectId')
 param azureObjectIdForStoreUser string
+
+@description('qrCodeUrl')
+param qrCodeUrl string
+
+@description('qrCodeSecret')
+@secure()
+param qrCodeSecret string
+
 
 var applicationInsightsName = 'ai${uniqueString(resourceGroup().id)}'
 var storageAccountType = 'Standard_LRS'
@@ -36,7 +44,8 @@ module kv 'keyvault.bicep' = {
   name:'keyvault'
   params:{
     objectId:azureObjectIdForStoreUser
-    secretValue:applicationSecret
+    secretApplicationValue:applicationSecret
+    secretQrCodeValue:qrCodeSecret
     location:location
   }
 }
@@ -119,7 +128,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         }
         {
           name: 'applicationSecret'
-          value: kv.outputs.secretUri
+          value: kv.outputs.secretApplicationUri
         }
         {
           name: 'siteId'
@@ -134,6 +143,14 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         {
           name: 'incomingMailListId'
           value: incomingMailListId
+        }
+        {
+          name: 'qrCodeSecret'
+          value: kv.outputs.secretApplicationUri
+        }
+        {
+          name: 'qrCodeUrl'
+          value: qrCodeUrl
         }
       ]
       ftpsState: 'FtpsOnly'
