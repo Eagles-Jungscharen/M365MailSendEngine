@@ -128,7 +128,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         }
         {
           name: 'applicationSecret'
-          value: kv.outputs.secretApplicationUri
+          value: '@Microsoft.KeyVault(SecretUri=${kv.outputs.secretApplicationUri}/)'
         }
         {
           name: 'siteId'
@@ -146,7 +146,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         }
         {
           name: 'qrCodeSecret'
-          value: kv.outputs.secretApplicationUri
+          value: '@Microsoft.KeyVault(SecretUri=${kv.outputs.secretQrCodeUri}/)'
         }
         {
           name: 'qrCodeUrl'
@@ -157,5 +157,14 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
       minTlsVersion: '1.2'
     }
     httpsOnly: true
+  }
+}
+
+module addPolicy 'keyvaultAddPolicy.bicep' = {
+  name:'addPolicy'
+  params:{
+    functionId:functionApp.identity.principalId
+    kvName:kv.outputs.kvName
+    tenantId:tenantId
   }
 }

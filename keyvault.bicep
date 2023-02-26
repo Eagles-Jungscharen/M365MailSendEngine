@@ -61,3 +61,4 @@ resource secretQRCode 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
 
 output secretApplicationUri string = secretApplication.properties.secretUri
 output secretQrCodeUri string = secretQRCode.properties.secretUri
+output kvName string = kv.name
