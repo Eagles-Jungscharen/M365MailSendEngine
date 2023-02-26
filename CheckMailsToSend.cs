@@ -40,7 +40,6 @@ public class CheckMailsToSend
                 }
                 MailDefinition definition = null;
                 if (definitions.TryGetValue(request.MailKey, out definition)) {
-                    //Find Attachment to Attach
                     MailSendBuilder builder = new MailSendBuilder(definition.ReplyTo);
                     builder.AddContent(definition.MailText).AddSubject(definition.MailSubject).AddSendTo(request.EMail);
                     if(definition.QrBill) {
@@ -64,6 +63,7 @@ public class CheckMailsToSend
                         });
                         builder.AddQRCode(qrCode);
                     }
+                    definition.Attachments.ForEach(att=>builder.AddAttachment(att));
                     ProcessPlaceHolder(builder,request);
                     await _mailSendClient.SendMail(builder);
                     await _sharepointClient.UpdateMailAsSent(request.Id);

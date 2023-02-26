@@ -6,7 +6,7 @@ using Microsoft.Graph;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.IO;
 
 namespace Eagels.MailSender.Services;
 
@@ -37,7 +37,6 @@ public class SharepointClient
         ListResponse response = JsonConvert.DeserializeObject<ListResponse>(await all.Content.ReadAsStringAsync());
         return response.Value.Select(item =>
         {
-            log.LogInformation(JsonConvert.SerializeObject(item.Fields));
             return MailRequest.BuildMRFromItem(item.Fields, item.Id);
         }).ToList();
     }
@@ -59,11 +58,36 @@ public class SharepointClient
         .Expand("fields")
         .Filter($"fields/Title eq '{mailKey}'").GetResponseAsync();
         ListResponse response = JsonConvert.DeserializeObject<ListResponse>(await all.Content.ReadAsStringAsync());
-        return response.Value.Select(item =>
-        {
-            log.LogInformation(JsonConvert.SerializeObject(item.Fields));
-            return MailDefinition.BuildMailDefinition(item.Fields, item.Id);
-        }).FirstOrDefault();
+        List<MailDefinition> definitions = new List<MailDefinition>();
+        foreach(var item in response.Value) {
+            var attachments = await GetAttachmentsForMailDefintion(mailKey, log);
+            var maildefinition = MailDefinition.BuildMailDefinition(item.Fields, item.Id,attachments);
+            definitions.Add(maildefinition);
+        }
+        return definitions.FirstOrDefault();
+    }
+    private async Task<List<FileAttachment>> GetAttachmentsForMailDefintion(string mailKey,ILogger log) {
+        IDriveItemChildrenCollectionPage itemsPage = await _graphClient.Sites[_siteId].Drive.Root.Children.Request().Top(5000).GetAsync();
+        if (itemsPage.CurrentPage.Any(item=>item.Name == mailKey)) {
+           IDriveItemChildrenCollectionPage files = await _graphClient.Sites[_siteId].Drive.Root.ItemWithPath(mailKey).Children.Request().Top(5000).GetAsync();
+           List<FileAttachment> attachments = new List<FileAttachment>();
+           foreach( var fileContent in files.CurrentPage)  {
+                Microsoft.Graph.File file = fileContent.File;
+                if (file != null) {
+                    var content = await _graphClient.Sites[_siteId].Drive.Root.ItemWithPath(mailKey+"/"+fileContent.Name).Content.Request().GetAsync();
+                    var memoryStream = new MemoryStream();
+                    await content.CopyToAsync(memoryStream);
+                    byte[] arr = memoryStream.ToArray();
+                    attachments.Add(new FileAttachment(){
+                        Name = fileContent.Name,
+                        ContentType = file.MimeType,
+                        ContentBytes = arr
+                    });
+                }
+           }
+           return attachments;
+        }
+        return new List<FileAttachment>();
     }
 }
 

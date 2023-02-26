@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Eagels.MailSender.Extension;
+using Microsoft.Graph;
 
 public class MailDefinition
 {
@@ -13,8 +14,9 @@ public class MailDefinition
     public string MailText { set; get; }
     public string MailSubject { set; get; }
     public string IBAN {set;get;}
+    public List<FileAttachment> Attachments {set;get;}
 
-    public static MailDefinition BuildMailDefinition(IDictionary<string, object> values, string id)
+    public static MailDefinition BuildMailDefinition(IDictionary<string, object> values, string id, List<FileAttachment> attachments)
     {
 
         return new MailDefinition()
@@ -28,7 +30,8 @@ public class MailDefinition
             QrLine2 = values.GetString("qrline2"),
             QrName = values.GetString("qrname"),
             ReplyTo = values.GetString("replyto"),
-            IBAN = values.GetString("iban")
+            IBAN = values.GetString("iban"),
+            Attachments = attachments
         };
     }
 }

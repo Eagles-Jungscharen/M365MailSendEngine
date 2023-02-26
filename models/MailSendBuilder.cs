@@ -43,6 +43,10 @@ public class MailSendBuilder
         _subject = subject;
         return this;
     }
+    public MailSendBuilder AddAttachment(FileAttachment attachement) {
+        _attachments.Add(attachement);
+        return this;
+    }
     public MailSendBuilder AddAttachment(string name, string contenType, byte[] content)
     {
         _attachments.Add(new FileAttachment()
