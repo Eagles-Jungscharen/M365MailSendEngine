@@ -1,23 +1,23 @@
-using System.Threading.Tasks;
 using Azure.Identity;
+using EaglesJungscharen.Azure.MailSender.Models;
 using Microsoft.Graph;
+using Microsoft.Graph.Users.Item.SendMail;
 
 namespace Eagels.MailSender.Services;
 
-public class MailSendClient {
+public class MailSendClient (GraphServiceClient graphClient)
+{
 
-    private GraphServiceClient _graphClient;
+    private GraphServiceClient _graphClient = graphClient;
 
-    public MailSendClient(string tenantId, string applicationId, string applicationSecret) {
-        var options = new TokenCredentialOptions
+    public async Task SendMail(MailSendBuilder builder)
+    {
+        var body = new SendMailPostRequestBody
         {
-            AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
+            Message = builder.BuildMailMessage(),
+            SaveToSentItems = true
         };
-        var clientSecretCredential = new ClientSecretCredential(tenantId, applicationId, applicationSecret, options);
-        _graphClient = new GraphServiceClient(clientSecretCredential);
-    }
 
-    public async Task SendMail(MailSendBuilder builder) {
-        await _graphClient.Users[builder.GetSendFrom()].SendMail(builder.BuildMailMessage()).Request().PostAsync();
+        await _graphClient.Users[builder.GetSendFrom()].SendMail.PostAsync(body);
     }
 }

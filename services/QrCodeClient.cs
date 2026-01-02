@@ -1,19 +1,15 @@
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
-using Eagels.MailSender.Models;
-using Newtonsoft.Json;
+using System.Text.Json;
+using EaglesJungscharen.Azure.Mailsender.Models;
 
-namespace Eagels.MailSender.Services;
+namespace EaglesJungscharen.Azure.Mailsender.Services;
 
-public class QrCodeClient {
-    private readonly HttpClient _client;
-    public QrCodeClient (HttpClient client) {
-        _client = client;
-    }
-
+public class QrCodeClient(HttpClient client) {
+    private readonly HttpClient _client = client;
+    
     public async Task<byte[]> GetQRCode(InputBill inputBill) {
-        HttpContent content = new StringContent(JsonConvert.SerializeObject(inputBill),Encoding.UTF8, "application/json");
+        var payload = JsonSerializer.Serialize(inputBill);
+        HttpContent content = new StringContent(payload,Encoding.UTF8, "application/json");
         HttpResponseMessage response = await _client.PostAsync("api/GenerateQRBill?png=1", content);
         return await response.Content.ReadAsByteArrayAsync();;
     }

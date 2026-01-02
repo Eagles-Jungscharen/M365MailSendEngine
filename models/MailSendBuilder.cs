@@ -1,16 +1,15 @@
-using System.Collections.Generic;
-using Microsoft.Graph;
+using Microsoft.Graph.Models;
 
-namespace Eagels.MailSender;
+namespace EaglesJungscharen.Azure.MailSender.Models;
 
 public class MailSendBuilder
 {
     private string _sendFrom;
-    private string _sendTo;
-    private string _content;
+    private string? _sendTo;
+    private string? _content;
     private bool _hasQrCode;
-    private string _subject;
-    private MessageAttachmentsCollectionPage _attachments = new MessageAttachmentsCollectionPage();
+    private string? _subject;
+    private List<Attachment> _attachments = [];
 
     public MailSendBuilder(string sendFrom)
     {
@@ -57,16 +56,19 @@ public class MailSendBuilder
         });
         return this;
     }
-    public MailSendBuilder ReplacePlaceHolders(string placeholder, string value)
+    public MailSendBuilder ReplacePlaceHolders(string placeholder, string? value)
     {
-        _content = _content.Replace(placeholder, value);
+        if (string.IsNullOrEmpty(_content))
+        {
+            return this;
+        }
+        _content = _content.Replace(placeholder, value ?? "");
         return this;
     }
 
     public Message BuildMailMessage()
     {
-        string content = _hasQrCode ? _content + "<img src='cid:qrcode' width='50%' height='50%'/>" : _content;
-        MessageAttachmentsCollectionPage attachments = new MessageAttachmentsCollectionPage();
+        string? content = _hasQrCode ? _content + "<img src='cid:qrcode' width='50%' height='50%'/>" : _content;
         return new Message()
         {
             Attachments = _attachments,
@@ -76,14 +78,12 @@ public class MailSendBuilder
                 ContentType = BodyType.Html,
                 Content = content
             },
-            ToRecipients = new Recipient[]{new Recipient
-                {
+            ToRecipients = [new() {
                     EmailAddress = new EmailAddress
                     {
                         Address = _sendTo
                     }
-                }
-            }
+                }]
         };
     }
     public string GetSendFrom() {
