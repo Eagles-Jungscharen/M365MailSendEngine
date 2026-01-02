@@ -1,6 +1,7 @@
 
 using Azure.Identity;
 using Eagels.MailSender.Services;
+using EaglesJungscharen.Azure.Mailsender.Models;
 using EaglesJungscharen.Azure.Mailsender.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
@@ -21,6 +22,12 @@ string incomingMailListId = System.Environment.GetEnvironmentVariable("incomingM
 string qrCodeUrl = System.Environment.GetEnvironmentVariable("qrCodeUrl", System.EnvironmentVariableTarget.Process);
 string qrCodeSecret = System.Environment.GetEnvironmentVariable("qrCodeSecret", System.EnvironmentVariableTarget.Process);
 
+builder.Services.AddOptions<SharePointConfiguration>().Configure(o =>
+{
+    o.DefinitionListId = definitionListId!;
+    o.IncomingMailListId = incomingMailListId!;
+    o.SiteId = siteId!;
+});
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
@@ -36,14 +43,11 @@ builder.Services.AddSingleton<GraphServiceClient>(config =>
     return new GraphServiceClient(clientSecretCredential);
 });
 
-builder.Services.AddSingleton<SharepointClient>(config =>
-{
-    return new SharepointClient(tenantId, applicationId, applicationSecret, siteId, definitionListId, incomingMailListId);
-});
+builder.Services.AddSingleton<SharepointClient>();
 builder.Services.AddSingleton<MailSendClient>();
 builder.Services.AddHttpClient<QrCodeClient>(client =>
     {
-        client.BaseAddress = new Uri(qrCodeUrl);
+        client.BaseAddress = new Uri(qrCodeUrl!);
         client.DefaultRequestHeaders.Add("x-functions-key", qrCodeSecret);
     }).ConfigureHttpClient(config => new HttpClientHandler
     {

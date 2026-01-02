@@ -3,29 +3,19 @@ using Microsoft.Graph;
 using Microsoft.Extensions.Logging;
 using EaglesJungscharen.Azure.Mailsender.Models;
 using Microsoft.Graph.Models;
+using Microsoft.Extensions.Options;
 
 namespace EaglesJungscharen.Azure.Mailsender.Services;
 
-public class SharepointClient
+public class SharepointClient (ILogger<SharepointClient> logger, GraphServiceClient client, IOptions<SharePointConfiguration> options)
 {
-    private GraphServiceClient _graphClient;
-    private readonly string _siteId;
-    private readonly string _definitionListId;
-    private readonly string _incomingMailListId;
-    public SharepointClient(string tenantId, string applicationId, string applicationSecret, string siteId, string definitionListId, string incomingMailListId)
-    {
-        var options = new TokenCredentialOptions
-        {
-            AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
-        };
-        var clientSecretCredential = new ClientSecretCredential(tenantId, applicationId, applicationSecret, options);
-        _graphClient = new GraphServiceClient(clientSecretCredential);
-        this._siteId = siteId;
-        this._definitionListId = definitionListId;
-        this._incomingMailListId = incomingMailListId;
-    }
-
-    public async Task<List<MailRequest>> GetIncomingMails(ILogger log)
+    private GraphServiceClient _graphClient = client;
+    private readonly string _siteId = options.Value.SiteId;
+    private readonly string _definitionListId = options.Value.DefinitionListId;
+    private readonly string _incomingMailListId = options.Value.IncomingMailListId;
+    private readonly ILogger<SharepointClient> _logger = logger;
+    
+    public async Task<List<MailRequest>> GetIncomingMails()
     {
         var response = await _graphClient.Sites[this._siteId].Lists[this._incomingMailListId].Items.GetAsync(config =>
         {
@@ -50,7 +40,7 @@ public class SharepointClient
         };
         await _graphClient.Sites[this._siteId].Lists[this._incomingMailListId].Items[id].Fields.PatchAsync(fieldValueSet);
     }
-    public async Task<MailDefinition?> GetMailDefinition(string mailKey, ILogger log)
+    public async Task<MailDefinition?> GetMailDefinition(string mailKey)
     {
         var response = await _graphClient.Sites[this._siteId].Lists[this._definitionListId].Items.GetAsync(config =>
         {
@@ -62,13 +52,13 @@ public class SharepointClient
         List<MailDefinition> definitions = [];
         foreach (var item in items)
         {
-            var attachments = await GetAttachmentsForMailDefintion(mailKey, log);
+            var attachments = await GetAttachmentsForMailDefintion(mailKey);
             var maildefinition = MailDefinition.BuildMailDefinition(item.Fields?.AdditionalData ?? new Dictionary<string, object>(), item.Id!, attachments);
             definitions.Add(maildefinition);
         }
         return definitions.FirstOrDefault();
     }
-    private async Task<List<FileAttachment>> GetAttachmentsForMailDefintion(string mailKey, ILogger log)
+    private async Task<List<FileAttachment>> GetAttachmentsForMailDefintion(string mailKey)
     {
         var drive = await _graphClient.Sites[_siteId].Drive.GetAsync();
         if (drive is null)
@@ -103,6 +93,5 @@ public class SharepointClient
             }
         }
         return attachments;
-
     }
 }
