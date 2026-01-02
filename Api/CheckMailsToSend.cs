@@ -1,5 +1,4 @@
 
-using Eagels.MailSender;
 using Eagels.MailSender.Services;
 using EaglesJungscharen.Azure.Mailsender.Models;
 using EaglesJungscharen.Azure.Mailsender.Services;
@@ -20,15 +19,15 @@ public class CheckMailsToSend(ILogger<CheckMailsToSend> logger, SharepointClient
     public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
     {
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-        Dictionary<string,MailDefinition> definitions = new Dictionary<string, MailDefinition>();
+        Dictionary<string,MailDefinition> definitions = [];
         try
         {
-            List<MailRequest> requests = await _sharepointClient.GetIncomingMails(_logger);
+            List<MailRequest> requests = await _sharepointClient.GetIncomingMails();
             foreach (MailRequest request in requests)
             {
                 if (!definitions.ContainsKey(request.MailKey)) {
-                    MailDefinition md = await _sharepointClient.GetMailDefinition(request.MailKey,_logger);
-                    if (md !=null) {
+                    MailDefinition? md = await _sharepointClient.GetMailDefinition(request.MailKey);
+                    if (md is not null) {
                         definitions.Add(request.MailKey, md);
                     }
                 }

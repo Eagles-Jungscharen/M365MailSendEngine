@@ -1,4 +1,4 @@
-using Eagels.MailSender.Extension;
+using EaglesJungscharen.Azure.Mailsender.Extension;
 using Microsoft.Graph.Models;
 
 namespace EaglesJungscharen.Azure.Mailsender.Models;
@@ -16,7 +16,7 @@ public class MailDefinition
     public string? MailText { set; get; }
     public string? MailSubject { set; get; }
     public string? IBAN {set;get;}
-    public List<FileAttachment>? Attachments {set;get;}
+    public List<FileAttachment> Attachments {set;get;} = [];
 
     public static MailDefinition BuildMailDefinition(IDictionary<string, object> values, string id, List<FileAttachment> attachments)
     {

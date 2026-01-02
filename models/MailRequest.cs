@@ -1,4 +1,5 @@
-using Eagels.MailSender.Extension;
+
+using EaglesJungscharen.Azure.Mailsender.Extension;
 
 namespace EaglesJungscharen.Azure.Mailsender.Models;
 public class MailRequest
