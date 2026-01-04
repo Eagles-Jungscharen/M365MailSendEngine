@@ -4,17 +4,19 @@ using Microsoft.Extensions.Logging;
 using EaglesJungscharen.Azure.Mailsender.Models;
 using Microsoft.Graph.Models;
 using Microsoft.Extensions.Options;
+using Microsoft.Kiota.Abstractions;
+using System.Net;
 
 namespace EaglesJungscharen.Azure.Mailsender.Services;
 
-public class SharepointClient (ILogger<SharepointClient> logger, GraphServiceClient client, IOptions<SharePointConfiguration> options)
+public class SharepointClient(ILogger<SharepointClient> logger, GraphServiceClient client, IOptions<SharePointConfiguration> options)
 {
     private GraphServiceClient _graphClient = client;
     private readonly string _siteId = options.Value.SiteId;
     private readonly string _definitionListId = options.Value.DefinitionListId;
     private readonly string _incomingMailListId = options.Value.IncomingMailListId;
     private readonly ILogger<SharepointClient> _logger = logger;
-    
+
     public async Task<List<MailRequest>> GetIncomingMails()
     {
         var response = await _graphClient.Sites[this._siteId].Lists[this._incomingMailListId].Items.GetAsync(config =>
@@ -65,7 +67,16 @@ public class SharepointClient (ILogger<SharepointClient> logger, GraphServiceCli
         {
             return [];
         }
-        var driveItem = await _graphClient.Drives[drive.Id].Root.ItemWithPath(mailKey).GetAsync();
+        DriveItem? driveItem = null;
+        try
+        {
+            driveItem = await _graphClient.Drives[drive.Id].Root.ItemWithPath(mailKey).GetAsync();
+        }
+        catch (ApiException ex) when (ex.ResponseStatusCode == (int)HttpStatusCode.NotFound)
+        {
+            return [];
+        }
+
         if (driveItem is null)
         {
             return [];
