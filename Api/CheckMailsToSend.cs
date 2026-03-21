@@ -48,7 +48,7 @@ public class CheckMailsToSend(ILogger<CheckMailsToSend> logger, SharepointClient
                                 Street = definition.QrStreet,
                                 HouseNumber = definition.QrHouseNumber,
                                 PostalCode = definition.QrPostalCode,
-                                Town = definition.QrPostalCode,
+                                Town = definition.QrTown,
                                 Name = definition.QrName,
                                 CountryCode = definition.QrCountryCode
                             },
